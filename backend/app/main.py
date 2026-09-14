@@ -1,11 +1,11 @@
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse, FileResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import shutil
 import os
 from app.extraction import extract_invoice_data
 from app.export import export_to_excel
+from app.tax_engine import process_invoice_tax
 
 app = FastAPI(
     title="Taxora API",
@@ -86,3 +86,23 @@ async def extract_and_export(file: UploadFile = File(...)):
         filename=f"{base_name}_taxora.xlsx",
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
+@app.post("/extract-and-tax")
+async def extract_and_tax(file: UploadFile = File(...), is_filer: bool = True):
+    allowed_types = ["image/jpeg", "image/png"]
+    if file.content_type not in allowed_types:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Only JPG and PNG files are supported"}
+        )
+    file_path = os.path.join(UPLOAD_DIR, file.filename)
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    extracted = extract_invoice_data(file_path, file.content_type)
+    tax_result = process_invoice_tax(extracted, is_filer)
+    return {
+        "message": "Extraction and tax calculation complete",
+        "filename": file.filename,
+        "extracted_data": extracted,
+        "tax_calculation": tax_result
+    }
