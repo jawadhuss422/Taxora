@@ -1,5 +1,7 @@
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 import shutil
 import os
 from app.extraction import extract_invoice_data
@@ -11,12 +13,19 @@ app = FastAPI(
     version="0.1.0"
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @app.get("/")
 def root():
-    return {"message": "Taxora API is running", "status": "ok"}
+    return FileResponse("../frontend/index.html")
 
 @app.get("/health")
 def health():
