@@ -1,8 +1,9 @@
 from fastapi import FastAPI, File, UploadFile
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 import shutil
 import os
 from app.extraction import extract_invoice_data
+from app.export import export_to_excel
 
 app = FastAPI(
     title="Taxora API",
@@ -56,3 +57,23 @@ async def extract_document(file: UploadFile = File(...)):
         "filename": file.filename,
         "extracted_data": extracted
     }
+
+@app.post("/extract-and-export")
+async def extract_and_export(file: UploadFile = File(...)):
+    allowed_types = ["image/jpeg", "image/png"]
+    if file.content_type not in allowed_types:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Only JPG and PNG files are supported"}
+        )
+    file_path = os.path.join(UPLOAD_DIR, file.filename)
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    extracted = extract_invoice_data(file_path, file.content_type)
+    base_name = os.path.splitext(file.filename)[0]
+    excel_path = export_to_excel(extracted, base_name)
+    return FileResponse(
+        path=excel_path,
+        filename=f"{base_name}_taxora.xlsx",
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
