@@ -23,9 +23,12 @@ app.add_middleware(
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+FRONTEND_PATH = os.path.join(BASE_DIR, "frontend", "index.html")
+
 @app.get("/")
 def root():
-    return FileResponse("../frontend/index.html")
+    return FileResponse(FRONTEND_PATH)
 
 @app.get("/health")
 def health():
