@@ -1,171 +1,649 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Taxora - AI Invoice Extraction</title>
+  <title>Taxora - AI Bookkeeping Platform</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; color: #1a1a2e; }
-    header { background: #1F4E79; color: white; padding: 20px 40px; display: flex; align-items: center; gap: 15px; }
-    header h1 { font-size: 28px; letter-spacing: 1px; }
-    header p { font-size: 13px; opacity: 0.8; }
-    .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
-    .upload-card { background: white; border-radius: 16px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); text-align: center; }
-    .upload-card h2 { font-size: 22px; color: #1F4E79; margin-bottom: 8px; }
-    .upload-card p { color: #666; margin-bottom: 30px; font-size: 14px; }
-    .drop-zone { border: 2px dashed #1F4E79; border-radius: 12px; padding: 50px 20px; cursor: pointer; transition: background 0.2s; margin-bottom: 20px; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; color: #1a1a2e; display: flex; height: 100vh; overflow: hidden; }
+
+    /* Sidebar */
+    .sidebar { width: 240px; background: #1F4E79; color: white; display: flex; flex-direction: column; padding: 0; flex-shrink: 0; }
+    .logo { padding: 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .logo h1 { font-size: 24px; letter-spacing: 1px; }
+    .logo p { font-size: 11px; opacity: 0.7; margin-top: 4px; }
+    .nav { padding: 16px 0; flex: 1; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; cursor: pointer; transition: background 0.2s; font-size: 14px; border-left: 3px solid transparent; }
+    .nav-item:hover { background: rgba(255,255,255,0.1); }
+    .nav-item.active { background: rgba(255,255,255,0.15); border-left-color: #4fc3f7; }
+    .nav-item .icon { font-size: 18px; width: 24px; text-align: center; }
+    .sidebar-footer { padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 12px; opacity: 0.6; }
+
+    /* Main */
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .topbar { background: white; padding: 16px 28px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e0e0e0; }
+    .topbar h2 { font-size: 20px; color: #1F4E79; }
+    .topbar-actions { display: flex; gap: 12px; align-items: center; }
+    .content { flex: 1; overflow-y: auto; padding: 24px 28px; }
+
+    /* Buttons */
+    .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s; }
+    .btn-primary { background: #1F4E79; color: white; }
+    .btn-primary:hover { background: #163d61; }
+    .btn-success { background: #27ae60; color: white; }
+    .btn-success:hover { background: #219a52; }
+    .btn-danger { background: #e74c3c; color: white; }
+    .btn-danger:hover { background: #c0392b; }
+    .btn-outline { background: white; color: #1F4E79; border: 2px solid #1F4E79; }
+    .btn-outline:hover { background: #f0f7ff; }
+    .btn:disabled { background: #ccc; cursor: not-allowed; }
+
+    /* Stats cards */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .stat-card .label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-card .value { font-size: 28px; font-weight: 700; color: #1F4E79; margin-top: 8px; }
+    .stat-card .sub { font-size: 12px; color: #27ae60; margin-top: 4px; }
+
+    /* Upload zone */
+    .upload-section { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 24px; }
+    .upload-section h3 { font-size: 16px; color: #1F4E79; margin-bottom: 16px; }
+    .drop-zone { border: 2px dashed #1F4E79; border-radius: 10px; padding: 30px; text-align: center; cursor: pointer; transition: background 0.2s; }
     .drop-zone:hover { background: #f0f7ff; }
     .drop-zone input { display: none; }
-    .drop-zone .icon { font-size: 48px; margin-bottom: 10px; }
-    .drop-zone p { color: #1F4E79; font-weight: 600; margin-bottom: 5px; }
+    .drop-zone p { color: #1F4E79; font-weight: 600; margin-top: 8px; }
     .drop-zone span { font-size: 12px; color: #999; }
-    #file-name { font-size: 13px; color: #444; margin-bottom: 20px; min-height: 20px; }
-    .btn { background: #1F4E79; color: white; border: none; padding: 14px 40px; border-radius: 8px; font-size: 16px; cursor: pointer; transition: background 0.2s; width: 100%; max-width: 300px; }
-    .btn:hover { background: #163d61; }
-    .btn:disabled { background: #aaa; cursor: not-allowed; }
-    .loader { display: none; margin: 20px auto; width: 40px; height: 40px; border: 4px solid #ddd; border-top: 4px solid #1F4E79; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    .upload-progress { display: none; margin-top: 16px; }
+    .progress-bar { height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; background: #1F4E79; width: 0%; transition: width 0.3s; border-radius: 3px; }
+    .progress-text { font-size: 13px; color: #555; margin-top: 8px; text-align: center; }
+
+    /* Invoice table */
+    .invoice-section { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .invoice-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .invoice-header h3 { font-size: 16px; color: #1F4E79; }
+    .invoice-actions { display: flex; gap: 10px; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th { background: #f8f9fa; padding: 12px 10px; text-align: left; font-weight: 600; color: #555; border-bottom: 2px solid #e0e0e0; white-space: nowrap; }
+    thead th:first-child { width: 40px; }
+    tbody tr { border-bottom: 1px solid #f0f0f0; transition: background 0.15s; cursor: pointer; }
+    tbody tr:hover { background: #f8fbff; }
+    tbody td { padding: 12px 10px; color: #333; }
+    .status-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .status-extracted { background: #fff3cd; color: #856404; }
+    .status-approved { background: #d4edda; color: #155724; }
+    .empty-state { text-align: center; padding: 60px 20px; color: #aaa; }
+    .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-state p { font-size: 15px; }
+
+    /* Modal */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: white; border-radius: 16px; padding: 32px; width: 600px; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+    .modal h2 { color: #1F4E79; margin-bottom: 24px; font-size: 20px; }
+    .modal-close { float: right; background: none; border: none; font-size: 24px; cursor: pointer; color: #888; margin-top: -8px; }
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .field-item label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px; }
+    .field-item .val { font-size: 14px; color: #333; font-weight: 500; padding: 8px 12px; background: #f8f9fa; border-radius: 6px; }
+    .tax-box { background: #e8f5e9; border-radius: 10px; padding: 16px; margin-bottom: 24px; }
+    .tax-box h4 { color: #27ae60; margin-bottom: 12px; font-size: 14px; }
+    .tax-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .tax-item label { font-size: 11px; color: #555; display: block; margin-bottom: 2px; }
+    .tax-item .val { font-size: 15px; font-weight: 700; color: #1a1a2e; }
+    .modal-actions { display: flex; gap: 12px; justify-content: flex-end; }
+
+    /* FBR Report modal */
+    .fbr-summary { background: #f0f7ff; border-radius: 10px; padding: 16px; margin-bottom: 20px; }
+    .fbr-summary h4 { color: #1F4E79; margin-bottom: 10px; }
+    .fbr-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #dde; font-size: 13px; }
+    .fbr-row:last-child { border-bottom: none; font-weight: 700; font-size: 14px; }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 24px; right: 24px; background: #1F4E79; color: white; padding: 14px 20px; border-radius: 10px; font-size: 14px; z-index: 9999; display: none; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+    .toast.success { background: #27ae60; }
+    .toast.error { background: #e74c3c; }
+
+    /* Loading spinner */
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .results-card { display: none; background: white; border-radius: 16px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-top: 30px; }
-    .results-card h2 { color: #1F4E79; margin-bottom: 20px; font-size: 20px; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-    th { background: #1F4E79; color: white; padding: 12px 16px; text-align: left; font-size: 14px; }
-    td { padding: 12px 16px; border-bottom: 1px solid #eee; font-size: 14px; }
-    tr:hover td { background: #f9f9f9; }
-    .field-label { font-weight: 600; color: #333; width: 200px; }
-    .download-btn { background: #27ae60; color: white; border: none; padding: 12px 30px; border-radius: 8px; font-size: 15px; cursor: pointer; transition: background 0.2s; }
-    .download-btn:hover { background: #219a52; }
-    .error-msg { display: none; background: #fee; border: 1px solid #fcc; color: #c00; padding: 15px; border-radius: 8px; margin-top: 15px; font-size: 14px; }
-    .success-badge { display: inline-block; background: #e8f5e9; color: #27ae60; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-left: 10px; }
   </style>
 </head>
 <body>
 
-<header>
-  <div>
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="logo">
     <h1>⚡ Taxora</h1>
-    <p>AI-powered Invoice & Tax Data Extraction for Pakistani Businesses</p>
+    <p>AI Bookkeeping Platform</p>
   </div>
-</header>
-
-<div class="container">
-  <div class="upload-card">
-    <h2>Upload Your Invoice</h2>
-    <p>Supports JPG and PNG invoice images. AI will extract all fields automatically.</p>
-    <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
-      <input type="file" id="fileInput" accept=".jpg,.jpeg,.png" onchange="handleFile(this)"/>
-      <div class="icon">📄</div>
-      <p>Click to upload invoice</p>
-      <span>JPG, PNG supported</span>
+  <nav class="nav">
+    <div class="nav-item active" onclick="showPage('dashboard')">
+      <span class="icon">📊</span> Dashboard
     </div>
-    <div id="file-name">No file selected</div>
-    <button class="btn" id="extractBtn" onclick="extractInvoice()" disabled>
-      🔍 Extract with AI
-    </button>
-    <div class="loader" id="loader"></div>
-    <div class="error-msg" id="errorMsg"></div>
+    <div class="nav-item" onclick="showPage('inbox')">
+      <span class="icon">📥</span> Invoice Inbox
+    </div>
+    <div class="nav-item" onclick="showPage('fbr')">
+      <span class="icon">🏛️</span> FBR Reports
+    </div>
+  </nav>
+  <div class="sidebar-footer">Pakistan FBR Tax Year 2027</div>
+</div>
+
+<!-- Main -->
+<div class="main">
+  <div class="topbar">
+    <h2 id="page-title">Dashboard</h2>
+    <div class="topbar-actions">
+      <button class="btn btn-primary" onclick="document.getElementById('uploadInput').click()">
+        + Upload Invoice
+      </button>
+      <input type="file" id="uploadInput" accept=".jpg,.jpeg,.png" style="display:none" onchange="handleUpload(this)"/>
+    </div>
   </div>
 
-  <div class="results-card" id="resultsCard">
-    <h2>Extracted Data <span class="success-badge">✓ Complete</span></h2>
-    <table id="resultsTable">
-      <thead>
-        <tr><th>Field</th><th>Extracted Value</th></tr>
-      </thead>
-      <tbody id="resultsBody"></tbody>
-    </table>
-    <button class="download-btn" id="downloadBtn" onclick="downloadExcel()">
-      📥 Download Excel Report
-    </button>
+  <div class="content" id="content">
+    <!-- Dashboard Page -->
+    <div id="page-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="label">Total Invoices</div>
+          <div class="value" id="stat-total">0</div>
+          <div class="sub">All time</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Pending Review</div>
+          <div class="value" id="stat-pending">0</div>
+          <div class="sub">Needs approval</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Approved</div>
+          <div class="value" id="stat-approved">0</div>
+          <div class="sub">Ready for FBR</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Total WHT</div>
+          <div class="value" id="stat-wht">0</div>
+          <div class="sub">Withholding tax (PKR)</div>
+        </div>
+      </div>
+
+      <div class="upload-section">
+        <h3>📤 Quick Upload</h3>
+        <div class="drop-zone" onclick="document.getElementById('uploadInput').click()">
+          <div style="font-size:40px">📄</div>
+          <p>Click or drag invoice here</p>
+          <span>JPG, PNG supported — AI will extract all data automatically</span>
+        </div>
+        <div class="upload-progress" id="upload-progress">
+          <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+          <div class="progress-text" id="progress-text">Uploading...</div>
+        </div>
+      </div>
+
+      <div class="invoice-section">
+        <div class="invoice-header">
+          <h3>📋 Recent Invoices</h3>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th></th>
+                <th>Supplier</th>
+                <th>Invoice No.</th>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>WHT</th>
+                <th>Section</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="recent-invoices"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="empty-recent">
+          <div class="icon">📭</div>
+          <p>No invoices yet — upload your first invoice above</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inbox Page -->
+    <div id="page-inbox" style="display:none">
+      <div class="invoice-section">
+        <div class="invoice-header">
+          <h3>📥 Invoice Inbox</h3>
+          <div class="invoice-actions">
+            <button class="btn btn-success" onclick="approveSelected()">✓ Approve Selected</button>
+            <button class="btn btn-danger" onclick="deleteSelected()">🗑 Delete Selected</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th><input type="checkbox" id="select-all" onchange="toggleAll(this)"/></th>
+                <th>Supplier</th>
+                <th>Invoice No.</th>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Transaction Type</th>
+                <th>WHT Rate</th>
+                <th>WHT Amount</th>
+                <th>FBR Section</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="inbox-invoices"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="empty-inbox">
+          <div class="icon">📭</div>
+          <p>No invoices yet — upload from the Dashboard</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- FBR Page -->
+    <div id="page-fbr" style="display:none">
+      <div class="invoice-section">
+        <div class="invoice-header">
+          <h3>🏛️ FBR Withholding Tax Report</h3>
+          <div class="invoice-actions">
+            <button class="btn btn-primary" onclick="previewFBR()">👁 Preview Report</button>
+            <button class="btn btn-success" onclick="generateFBR()">📥 Download FBR Report</button>
+          </div>
+        </div>
+        <p style="font-size:13px;color:#888;margin-bottom:16px;">Select approved invoices to include in the FBR withholding tax statement.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th><input type="checkbox" id="fbr-select-all" onchange="toggleFBRAll(this)"/></th>
+                <th>Supplier</th>
+                <th>Invoice No.</th>
+                <th>Date</th>
+                <th>Gross Amount</th>
+                <th>FBR Section</th>
+                <th>WHT Rate</th>
+                <th>WHT Amount</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="fbr-invoices"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="empty-fbr">
+          <div class="icon">📊</div>
+          <p>No approved invoices — approve invoices from the Inbox first</p>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
+<!-- Invoice Detail Modal -->
+<div class="modal-overlay" id="invoice-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <h2>📄 Invoice Details</h2>
+    <div class="field-grid" id="modal-fields"></div>
+    <div class="tax-box">
+      <h4>🏛️ FBR Tax Calculation</h4>
+      <div class="tax-grid" id="modal-tax"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Close</button>
+      <button class="btn btn-success" id="modal-approve-btn" onclick="approveFromModal()">✓ Approve</button>
+    </div>
+  </div>
+</div>
+
+<!-- FBR Preview Modal -->
+<div class="modal-overlay" id="fbr-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeFBRModal()">×</button>
+    <h2>🏛️ FBR Report Preview</h2>
+    <div class="fbr-summary" id="fbr-preview-content"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeFBRModal()">Close</button>
+      <button class="btn btn-success" onclick="generateFBR()">📥 Download Report</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
 <script>
-  let selectedFile = null;
+  const API = '';
+  let allInvoices = [];
+  let currentInvoiceId = null;
 
-  function handleFile(input) {
-    selectedFile = input.files[0];
-    if (selectedFile) {
-      document.getElementById('file-name').textContent = '📎 ' + selectedFile.name;
-      document.getElementById('extractBtn').disabled = false;
-    }
-  }
-
-  async function extractInvoice() {
-    if (!selectedFile) return;
-    document.getElementById('loader').style.display = 'block';
-    document.getElementById('extractBtn').disabled = true;
-    document.getElementById('resultsCard').style.display = 'none';
-    document.getElementById('errorMsg').style.display = 'none';
-
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-
-    try {
-      const response = await fetch('/extract', {
-        method: 'POST',
-        body: formData
-      });
-      const data = await response.json();
-      document.getElementById('loader').style.display = 'none';
-      document.getElementById('extractBtn').disabled = false;
-      if (data.extracted_data) {
-        displayResults(data.extracted_data);
-      } else {
-        showError('Extraction failed. Please try another image.');
-      }
-    } catch (err) {
-      document.getElementById('loader').style.display = 'none';
-      document.getElementById('extractBtn').disabled = false;
-      showError('Could not connect to server. Make sure the API is running.');
-    }
-  }
-
-  function displayResults(data) {
-    const labels = {
-      supplier_name: 'Supplier Name',
-      invoice_number: 'Invoice Number',
-      invoice_date: 'Invoice Date',
-      due_date: 'Due Date',
-      description: 'Description',
-      subtotal: 'Subtotal',
-      sales_tax: 'Sales Tax',
-      withholding_tax: 'Withholding Tax',
-      total_amount: 'Total Amount',
-      currency: 'Currency',
-      payment_method: 'Payment Method'
-    };
-    const tbody = document.getElementById('resultsBody');
-    tbody.innerHTML = '';
-    for (const [key, label] of Object.entries(labels)) {
-      const val = data[key] || '-';
-      tbody.innerHTML += `<tr><td class="field-label">${label}</td><td>${val}</td></tr>`;
-    }
-    document.getElementById('resultsCard').style.display = 'block';
-  }
-
-  async function downloadExcel() {
-    if (!selectedFile) return;
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-    const response = await fetch('/extract-and-export', {
-      method: 'POST',
-      body: formData
+  // Navigation
+  function showPage(page) {
+    ['dashboard','inbox','fbr'].forEach(p => {
+      document.getElementById('page-'+p).style.display = p === page ? 'block' : 'none';
     });
+    document.querySelectorAll('.nav-item').forEach((el, i) => {
+      el.classList.toggle('active', i === ['dashboard','inbox','fbr'].indexOf(page));
+    });
+    document.getElementById('page-title').textContent = {
+      dashboard: 'Dashboard', inbox: 'Invoice Inbox', fbr: 'FBR Reports'
+    }[page];
+    loadInvoices();
+  }
+
+  // Toast
+  function showToast(msg, type='') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast ' + type;
+    t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 3000);
+  }
+
+  // Upload
+  async function handleUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    const progress = document.getElementById('upload-progress');
+    const fill = document.getElementById('progress-fill');
+    const text = document.getElementById('progress-text');
+    
+    progress.style.display = 'block';
+    fill.style.width = '30%';
+    text.textContent = '🤖 AI is reading your invoice...';
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+      fill.style.width = '60%';
+      const response = await fetch(API + '/upload-and-extract', { method: 'POST', body: formData });
+      fill.style.width = '90%';
+      const data = await response.json();
+      fill.style.width = '100%';
+      
+      if (data.invoice_id) {
+        text.textContent = '✅ Invoice extracted and saved!';
+        showToast('Invoice extracted successfully!', 'success');
+        setTimeout(() => { progress.style.display = 'none'; fill.style.width = '0%'; }, 2000);
+        loadInvoices();
+      } else {
+        text.textContent = '❌ Extraction failed';
+        showToast('Extraction failed. Try another image.', 'error');
+      }
+    } catch(err) {
+      text.textContent = '❌ Error connecting to server';
+      showToast('Server error. Please try again.', 'error');
+    }
+    
+    input.value = '';
+  }
+
+  // Load invoices
+  async function loadInvoices() {
+    try {
+      const res = await fetch(API + '/invoices');
+      allInvoices = await res.json();
+      renderStats();
+      renderRecent();
+      renderInbox();
+      renderFBR();
+    } catch(err) {
+      console.error('Failed to load invoices', err);
+    }
+  }
+
+  // Stats
+  function renderStats() {
+    const total = allInvoices.length;
+    const pending = allInvoices.filter(i => i.status === 'extracted').length;
+    const approved = allInvoices.filter(i => i.status === 'approved').length;
+    const wht = allInvoices.reduce((sum, i) => sum + (i.tax_amount || 0), 0);
+    
+    document.getElementById('stat-total').textContent = total;
+    document.getElementById('stat-pending').textContent = pending;
+    document.getElementById('stat-approved').textContent = approved;
+    document.getElementById('stat-wht').textContent = wht.toFixed(2);
+  }
+
+  // Recent invoices
+  function renderRecent() {
+    const tbody = document.getElementById('recent-invoices');
+    const empty = document.getElementById('empty-recent');
+    const recent = allInvoices.slice(0, 10);
+    
+    if (recent.length === 0) {
+      tbody.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+    tbody.innerHTML = recent.map(inv => `
+      <tr onclick="openInvoice(${inv.id})">
+        <td><input type="checkbox" onclick="event.stopPropagation()"/></td>
+        <td><strong>${inv.supplier_name || '-'}</strong></td>
+        <td>${inv.invoice_number || '-'}</td>
+        <td>${inv.invoice_date || '-'}</td>
+        <td>${inv.currency || ''} ${inv.total_amount || '-'}</td>
+        <td>${inv.tax_amount?.toFixed(2) || '0.00'}</td>
+        <td><code>${inv.fbr_section || '-'}</code></td>
+        <td><span class="status-badge status-${inv.status}">${inv.status}</span></td>
+        <td>
+          <button class="btn btn-outline" style="padding:4px 10px;font-size:12px" onclick="event.stopPropagation();openInvoice(${inv.id})">View</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // Inbox
+  function renderInbox() {
+    const tbody = document.getElementById('inbox-invoices');
+    const empty = document.getElementById('empty-inbox');
+    
+    if (allInvoices.length === 0) {
+      tbody.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+    tbody.innerHTML = allInvoices.map(inv => `
+      <tr onclick="openInvoice(${inv.id})">
+        <td><input type="checkbox" class="inbox-check" value="${inv.id}" onclick="event.stopPropagation()"/></td>
+        <td><strong>${inv.supplier_name || '-'}</strong></td>
+        <td>${inv.invoice_number || '-'}</td>
+        <td>${inv.invoice_date || '-'}</td>
+        <td>${inv.currency || ''} ${inv.total_amount || '-'}</td>
+        <td>${(inv.transaction_type || '').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}</td>
+        <td>${inv.tax_rate || '-'}</td>
+        <td><strong>${inv.tax_amount?.toFixed(2) || '0.00'}</strong></td>
+        <td><code>${inv.fbr_section || '-'}</code></td>
+        <td><span class="status-badge status-${inv.status}">${inv.status}</span></td>
+        <td style="display:flex;gap:6px">
+          <button class="btn btn-success" style="padding:4px 10px;font-size:11px" onclick="event.stopPropagation();approveSingle(${inv.id})">✓</button>
+          <button class="btn btn-danger" style="padding:4px 10px;font-size:11px" onclick="event.stopPropagation();deleteSingle(${inv.id})">🗑</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // FBR page
+  function renderFBR() {
+    const tbody = document.getElementById('fbr-invoices');
+    const empty = document.getElementById('empty-fbr');
+    const approved = allInvoices.filter(i => i.status === 'approved');
+    
+    if (approved.length === 0) {
+      tbody.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+    tbody.innerHTML = approved.map(inv => `
+      <tr>
+        <td><input type="checkbox" class="fbr-check" value="${inv.id}" checked/></td>
+        <td><strong>${inv.supplier_name || '-'}</strong></td>
+        <td>${inv.invoice_number || '-'}</td>
+        <td>${inv.invoice_date || '-'}</td>
+        <td>${inv.currency || ''} ${inv.total_amount || '-'}</td>
+        <td><code>${inv.fbr_section || '-'}</code></td>
+        <td>${inv.tax_rate || '-'}</td>
+        <td><strong>${inv.tax_amount?.toFixed(2) || '0.00'}</strong></td>
+        <td><span class="status-badge status-${inv.status}">${inv.status}</span></td>
+      </tr>
+    `).join('');
+  }
+
+  // Open invoice modal
+  async function openInvoice(id) {
+    currentInvoiceId = id;
+    const res = await fetch(API + '/invoices/' + id);
+    const inv = await res.json();
+    
+    const fields = [
+      ['Supplier Name', inv.supplier_name],
+      ['Invoice Number', inv.invoice_number],
+      ['Invoice Date', inv.invoice_date],
+      ['Due Date', inv.due_date],
+      ['Description', inv.description],
+      ['Subtotal', inv.subtotal],
+      ['Sales Tax', inv.sales_tax],
+      ['Total Amount', inv.total_amount],
+      ['Currency', inv.currency],
+      ['Payment Method', inv.payment_method],
+    ];
+    
+    document.getElementById('modal-fields').innerHTML = fields.map(([label, val]) => `
+      <div class="field-item">
+        <label>${label}</label>
+        <div class="val">${val || '-'}</div>
+      </div>
+    `).join('');
+    
+    document.getElementById('modal-tax').innerHTML = `
+      <div class="tax-item"><label>Transaction Type</label><div class="val">${(inv.transaction_type||'').replace(/_/g,' ')}</div></div>
+      <div class="tax-item"><label>FBR Section</label><div class="val">${inv.fbr_section || '-'}</div></div>
+      <div class="tax-item"><label>WHT Rate</label><div class="val">${inv.tax_rate || '-'}</div></div>
+      <div class="tax-item"><label>Gross Amount</label><div class="val">${inv.total_amount || '-'}</div></div>
+      <div class="tax-item"><label>WHT Amount</label><div class="val">${(inv.tax_amount||0).toFixed(2)}</div></div>
+      <div class="tax-item"><label>Status</label><div class="val">${inv.status}</div></div>
+    `;
+    
+    const approveBtn = document.getElementById('modal-approve-btn');
+    approveBtn.style.display = inv.status === 'approved' ? 'none' : 'inline-block';
+    
+    document.getElementById('invoice-modal').classList.add('active');
+  }
+
+  function closeModal() { document.getElementById('invoice-modal').classList.remove('active'); }
+
+  async function approveFromModal() {
+    if (!currentInvoiceId) return;
+    await approveSingle(currentInvoiceId);
+    closeModal();
+  }
+
+  // Approve/Delete
+  async function approveSingle(id) {
+    await fetch(API + '/invoices/' + id + '/approve', { method: 'PUT' });
+    showToast('Invoice approved!', 'success');
+    loadInvoices();
+  }
+
+  async function deleteSingle(id) {
+    if (!confirm('Delete this invoice?')) return;
+    await fetch(API + '/invoices/' + id, { method: 'DELETE' });
+    showToast('Invoice deleted', '');
+    loadInvoices();
+  }
+
+  async function approveSelected() {
+    const checked = [...document.querySelectorAll('.inbox-check:checked')].map(el => el.value);
+    if (checked.length === 0) { showToast('Select at least one invoice', 'error'); return; }
+    await Promise.all(checked.map(id => fetch(API + '/invoices/' + id + '/approve', { method: 'PUT' })));
+    showToast(`${checked.length} invoice(s) approved!`, 'success');
+    loadInvoices();
+  }
+
+  async function deleteSelected() {
+    const checked = [...document.querySelectorAll('.inbox-check:checked')].map(el => el.value);
+    if (checked.length === 0) { showToast('Select at least one invoice', 'error'); return; }
+    if (!confirm(`Delete ${checked.length} invoice(s)?`)) return;
+    await Promise.all(checked.map(id => fetch(API + '/invoices/' + id, { method: 'DELETE' })));
+    showToast(`${checked.length} invoice(s) deleted`, '');
+    loadInvoices();
+  }
+
+  function toggleAll(cb) { document.querySelectorAll('.inbox-check').forEach(el => el.checked = cb.checked); }
+  function toggleFBRAll(cb) { document.querySelectorAll('.fbr-check').forEach(el => el.checked = cb.checked); }
+
+  // FBR Preview
+  function previewFBR() {
+    const checked = [...document.querySelectorAll('.fbr-check:checked')].map(el => parseInt(el.value));
+    if (checked.length === 0) { showToast('Select at least one invoice', 'error'); return; }
+    
+    const selected = allInvoices.filter(i => checked.includes(i.id));
+    const totalGross = selected.reduce((sum, i) => sum + parseFloat(i.total_amount || 0), 0);
+    const totalWHT = selected.reduce((sum, i) => sum + (i.tax_amount || 0), 0);
+    
+    document.getElementById('fbr-preview-content').innerHTML = `
+      <h4>📊 Report Summary — ${selected.length} Invoice(s)</h4>
+      ${selected.map(inv => `
+        <div class="fbr-row">
+          <span>${inv.supplier_name || '-'} (${inv.invoice_number || '-'})</span>
+          <span>WHT: ${(inv.tax_amount||0).toFixed(2)}</span>
+        </div>
+      `).join('')}
+      <div class="fbr-row">
+        <span>Total Gross Amount</span>
+        <span>${totalGross.toFixed(2)}</span>
+      </div>
+      <div class="fbr-row">
+        <span>Total Withholding Tax</span>
+        <span>${totalWHT.toFixed(2)}</span>
+      </div>
+    `;
+    
+    document.getElementById('fbr-modal').classList.add('active');
+  }
+
+  function closeFBRModal() { document.getElementById('fbr-modal').classList.remove('active'); }
+
+  // Generate FBR Report
+  async function generateFBR() {
+    const checked = [...document.querySelectorAll('.fbr-check:checked')].map(el => parseInt(el.value));
+    if (checked.length === 0) { showToast('Select at least one invoice', 'error'); return; }
+    
+    showToast('Generating FBR report...', '');
+    
+    const response = await fetch(API + '/generate-fbr-report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(checked)
+    });
+    
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = selectedFile.name.replace(/\.[^/.]+$/, '') + '_taxora.xlsx';
+    a.download = 'FBR_Withholding_Tax_Statement.xlsx';
     a.click();
+    
+    showToast('FBR Report downloaded!', 'success');
+    closeFBRModal();
   }
 
-  function showError(msg) {
-    const el = document.getElementById('errorMsg');
-    el.textContent = msg;
-    el.style.display = 'block';
-  }
+  // Initial load
+  loadInvoices();
+  setInterval(loadInvoices, 30000);
 </script>
-
 </body>
 </html>
