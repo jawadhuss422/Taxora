@@ -1,171 +1,674 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Taxora - AI Invoice Extraction</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; color: #1a1a2e; }
-    header { background: #1F4E79; color: white; padding: 20px 40px; display: flex; align-items: center; gap: 15px; }
-    header h1 { font-size: 28px; letter-spacing: 1px; }
-    header p { font-size: 13px; opacity: 0.8; }
-    .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
-    .upload-card { background: white; border-radius: 16px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); text-align: center; }
-    .upload-card h2 { font-size: 22px; color: #1F4E79; margin-bottom: 8px; }
-    .upload-card p { color: #666; margin-bottom: 30px; font-size: 14px; }
-    .drop-zone { border: 2px dashed #1F4E79; border-radius: 12px; padding: 50px 20px; cursor: pointer; transition: background 0.2s; margin-bottom: 20px; }
-    .drop-zone:hover { background: #f0f7ff; }
-    .drop-zone input { display: none; }
-    .drop-zone .icon { font-size: 48px; margin-bottom: 10px; }
-    .drop-zone p { color: #1F4E79; font-weight: 600; margin-bottom: 5px; }
-    .drop-zone span { font-size: 12px; color: #999; }
-    #file-name { font-size: 13px; color: #444; margin-bottom: 20px; min-height: 20px; }
-    .btn { background: #1F4E79; color: white; border: none; padding: 14px 40px; border-radius: 8px; font-size: 16px; cursor: pointer; transition: background 0.2s; width: 100%; max-width: 300px; }
-    .btn:hover { background: #163d61; }
-    .btn:disabled { background: #aaa; cursor: not-allowed; }
-    .loader { display: none; margin: 20px auto; width: 40px; height: 40px; border: 4px solid #ddd; border-top: 4px solid #1F4E79; border-radius: 50%; animation: spin 0.8s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .results-card { display: none; background: white; border-radius: 16px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-top: 30px; }
-    .results-card h2 { color: #1F4E79; margin-bottom: 20px; font-size: 20px; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-    th { background: #1F4E79; color: white; padding: 12px 16px; text-align: left; font-size: 14px; }
-    td { padding: 12px 16px; border-bottom: 1px solid #eee; font-size: 14px; }
-    tr:hover td { background: #f9f9f9; }
-    .field-label { font-weight: 600; color: #333; width: 200px; }
-    .download-btn { background: #27ae60; color: white; border: none; padding: 12px 30px; border-radius: 8px; font-size: 15px; cursor: pointer; transition: background 0.2s; }
-    .download-btn:hover { background: #219a52; }
-    .error-msg { display: none; background: #fee; border: 1px solid #fcc; color: #c00; padding: 15px; border-radius: 8px; margin-top: 15px; font-size: 14px; }
-    .success-badge { display: inline-block; background: #e8f5e9; color: #27ae60; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-left: 10px; }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>Taxora — FBR Tax Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0A0F1E;
+  --ink-2:#1C2340;
+  --ink-3:#2E3560;
+  --teal:#00C9A7;
+  --teal-dim:#009E85;
+  --teal-ghost:rgba(0,201,167,.10);
+  --amber:#F4A100;
+  --amber-ghost:rgba(244,161,0,.12);
+  --red:#E84D4D;
+  --red-ghost:rgba(232,77,77,.10);
+  --surface:#F7F8FC;
+  --surface-2:#ECEEF5;
+  --white:#FFFFFF;
+  --text:#0A0F1E;
+  --text-2:#4A5068;
+  --text-3:#8B90A8;
+  --border:#DDE0EE;
+  --radius:12px;
+  --sidebar:240px;
+  --font-head:'Space Grotesk',sans-serif;
+  --font-body:'Inter',sans-serif;
+}
+body{font-family:var(--font-body);background:var(--surface);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* ── AUTH SCREEN ── */
+#auth-screen{display:flex;min-height:100vh}
+.auth-left{flex:1;background:var(--ink);display:flex;flex-direction:column;justify-content:center;padding:64px 56px;position:relative;overflow:hidden}
+.auth-left::before{content:'';position:absolute;top:-80px;right:-80px;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(0,201,167,.18) 0%,transparent 70%)}
+.auth-left::after{content:'';position:absolute;bottom:-60px;left:-40px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(0,201,167,.10) 0%,transparent 70%)}
+.auth-logo{font-family:var(--font-head);font-size:28px;font-weight:700;color:var(--white);letter-spacing:-.5px;margin-bottom:48px}
+.auth-logo span{color:var(--teal)}
+.auth-tagline{font-family:var(--font-head);font-size:38px;font-weight:600;color:var(--white);line-height:1.2;margin-bottom:20px;max-width:380px}
+.auth-tagline em{color:var(--teal);font-style:normal}
+.auth-sub{font-size:15px;color:rgba(255,255,255,.55);line-height:1.7;max-width:340px}
+.auth-stats{display:flex;gap:32px;margin-top:56px}
+.auth-stat{border-left:2px solid var(--teal);padding-left:16px}
+.auth-stat-n{font-family:var(--font-head);font-size:24px;font-weight:700;color:var(--white)}
+.auth-stat-l{font-size:12px;color:rgba(255,255,255,.45);margin-top:2px}
+.auth-right{width:480px;display:flex;align-items:center;justify-content:center;padding:48px 56px;background:var(--white)}
+.auth-form-wrap{width:100%}
+.auth-form-title{font-family:var(--font-head);font-size:26px;font-weight:600;color:var(--ink);margin-bottom:6px}
+.auth-form-sub{font-size:14px;color:var(--text-2);margin-bottom:36px}
+.form-group{margin-bottom:20px}
+.form-label{display:block;font-size:13px;font-weight:500;color:var(--text-2);margin-bottom:6px}
+.form-input{width:100%;padding:12px 16px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font-body);font-size:14px;color:var(--text);background:var(--surface);outline:none;transition:border-color .2s}
+.form-input:focus{border-color:var(--teal);background:var(--white)}
+.form-input::placeholder{color:var(--text-3)}
+.btn-primary{width:100%;padding:13px;background:var(--teal);color:var(--white);border:none;border-radius:8px;font-family:var(--font-body);font-size:15px;font-weight:600;cursor:pointer;transition:background .2s,transform .1s}
+.btn-primary:hover{background:var(--teal-dim)}
+.btn-primary:active{transform:scale(.99)}
+.auth-footer{text-align:center;margin-top:20px;font-size:13px;color:var(--text-3)}
+.auth-footer a{color:var(--teal);text-decoration:none;font-weight:500}
+
+/* ── APP SHELL ── */
+#app-screen{display:none;min-height:100vh}
+.app-layout{display:flex;min-height:100vh}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar);background:var(--ink);display:flex;flex-direction:column;padding:0;flex-shrink:0;position:fixed;top:0;left:0;height:100vh}
+.sidebar-logo{padding:28px 24px 24px;font-family:var(--font-head);font-size:22px;font-weight:700;color:var(--white);letter-spacing:-.3px;border-bottom:1px solid rgba(255,255,255,.06)}
+.sidebar-logo span{color:var(--teal)}
+.sidebar-nav{flex:1;padding:16px 12px;overflow-y:auto}
+.nav-section{font-size:10px;font-weight:600;color:rgba(255,255,255,.28);letter-spacing:.08em;padding:16px 12px 8px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;font-size:14px;font-weight:500;color:rgba(255,255,255,.55);cursor:pointer;transition:all .15s;margin-bottom:2px}
+.nav-item:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.85)}
+.nav-item.active{background:var(--teal-ghost);color:var(--teal);border-left:2px solid var(--teal);padding-left:10px}
+.nav-icon{font-size:16px;width:18px;text-align:center}
+.sidebar-footer{padding:16px 12px;border-top:1px solid rgba(255,255,255,.06)}
+.user-pill{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer}
+.user-avatar{width:32px;height:32px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--ink);flex-shrink:0}
+.user-name{font-size:13px;font-weight:500;color:rgba(255,255,255,.8);line-height:1.2}
+.user-role{font-size:11px;color:rgba(255,255,255,.35)}
+
+/* MAIN */
+.main-area{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:20px 32px;background:var(--white);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+.topbar-title{font-family:var(--font-head);font-size:20px;font-weight:600;color:var(--ink)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.topbar-btn{padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;border:none}
+.topbar-btn.outline{background:transparent;border:1.5px solid var(--border);color:var(--text-2)}
+.topbar-btn.outline:hover{border-color:var(--teal);color:var(--teal)}
+.topbar-btn.primary{background:var(--teal);color:var(--white)}
+.topbar-btn.primary:hover{background:var(--teal-dim)}
+.notif-dot{width:8px;height:8px;border-radius:50%;background:var(--red);margin-top:-12px;margin-left:-8px}
+
+/* PAGES */
+.page{display:none;padding:32px}
+.page.active{display:block}
+
+/* ── DASHBOARD ── */
+.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.metric-card{background:var(--white);border-radius:var(--radius);padding:24px;border:1px solid var(--border)}
+.metric-label{font-size:12px;font-weight:500;color:var(--text-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em}
+.metric-value{font-family:var(--font-head);font-size:28px;font-weight:700;color:var(--ink);line-height:1}
+.metric-sub{display:flex;align-items:center;gap:4px;margin-top:6px;font-size:12px}
+.badge-up{color:#16A34A;background:#DCFCE7;padding:2px 6px;border-radius:4px;font-weight:600}
+.badge-down{color:var(--red);background:var(--red-ghost);padding:2px 6px;border-radius:4px;font-weight:600}
+.metric-sub span{color:var(--text-3)}
+.metric-card.teal-accent{border-top:3px solid var(--teal)}
+.metric-card.amber-accent{border-top:3px solid var(--amber)}
+.metric-card.red-accent{border-top:3px solid var(--red)}
+.metric-card.green-accent{border-top:3px solid #16A34A}
+.charts-row{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:28px}
+.card{background:var(--white);border-radius:var(--radius);border:1px solid var(--border);padding:24px}
+.card-title{font-family:var(--font-head);font-size:15px;font-weight:600;color:var(--ink);margin-bottom:4px}
+.card-sub{font-size:12px;color:var(--text-3);margin-bottom:20px}
+.activity-list{display:flex;flex-direction:column;gap:0}
+.activity-item{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--surface-2)}
+.activity-item:last-child{border-bottom:none}
+.activity-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.activity-icon.invoice{background:var(--teal-ghost)}
+.activity-icon.expense{background:var(--amber-ghost)}
+.activity-icon.tax{background:var(--red-ghost)}
+.activity-body{flex:1}
+.activity-name{font-size:13px;font-weight:500;color:var(--text)}
+.activity-time{font-size:11px;color:var(--text-3);margin-top:1px}
+.activity-amount{font-size:13px;font-weight:600;color:var(--ink)}
+.fbr-status{display:flex;flex-direction:column;gap:12px}
+.fbr-item{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface);border-radius:8px}
+.fbr-item-label{font-size:13px;font-weight:500;color:var(--text)}
+.status-pill{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px}
+.status-pill.done{background:#DCFCE7;color:#15803D}
+.status-pill.pending{background:var(--amber-ghost);color:#92400E}
+.status-pill.missing{background:var(--red-ghost);color:#991B1B}
+.bottom-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+/* ── UPLOAD ── */
+.upload-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:56px 32px;text-align:center;cursor:pointer;transition:all .2s;background:var(--white);margin-bottom:24px}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--teal);background:var(--teal-ghost)}
+.upload-icon{font-size:40px;margin-bottom:16px}
+.upload-title{font-family:var(--font-head);font-size:18px;font-weight:600;color:var(--ink);margin-bottom:6px}
+.upload-sub{font-size:13px;color:var(--text-3);margin-bottom:20px}
+.upload-types{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.type-tag{background:var(--surface-2);color:var(--text-2);font-size:11px;font-weight:600;padding:4px 10px;border-radius:4px}
+.doc-table{width:100%;border-collapse:collapse;background:var(--white);border-radius:var(--radius);overflow:hidden;border:1px solid var(--border)}
+.doc-table th{padding:12px 16px;font-size:11px;font-weight:600;color:var(--text-3);text-align:left;text-transform:uppercase;letter-spacing:.04em;background:var(--surface);border-bottom:1px solid var(--border)}
+.doc-table td{padding:14px 16px;font-size:13px;color:var(--text);border-bottom:1px solid var(--surface-2)}
+.doc-table tr:last-child td{border-bottom:none}
+.doc-table tr:hover td{background:var(--surface)}
+.doc-type-pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px}
+.doc-type-pill.invoice{background:var(--teal-ghost);color:#007A62}
+.doc-type-pill.receipt{background:var(--amber-ghost);color:#92400E}
+.doc-type-pill.expense{background:#EEF2FF;color:#4338CA}
+.ai-badge{background:linear-gradient(135deg,var(--teal),#007AFF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:11px;font-weight:700}
+
+/* ── REPORTS ── */
+.report-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px}
+.report-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--border);padding:24px;cursor:pointer;transition:all .2s}
+.report-card:hover{border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-ghost)}
+.report-card-icon{font-size:28px;margin-bottom:12px}
+.report-card-title{font-family:var(--font-head);font-size:15px;font-weight:600;color:var(--ink);margin-bottom:4px}
+.report-card-desc{font-size:12px;color:var(--text-3);line-height:1.5}
+.fbr-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:#FEF3C7;color:#92400E;margin-top:10px}
+.table-section{background:var(--white);border-radius:var(--radius);border:1px solid var(--border);overflow:hidden}
+.table-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border)}
+
+/* ── SETTINGS ── */
+.settings-grid{display:grid;grid-template-columns:220px 1fr;gap:24px}
+.settings-nav{background:var(--white);border-radius:var(--radius);border:1px solid var(--border);padding:12px;height:fit-content}
+.settings-nav-item{padding:10px 14px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text-2);transition:all .15s}
+.settings-nav-item:hover{background:var(--surface);color:var(--text)}
+.settings-nav-item.active{background:var(--teal-ghost);color:var(--teal)}
+.settings-panel{display:flex;flex-direction:column;gap:20px}
+.settings-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--border);padding:28px}
+.settings-section-title{font-family:var(--font-head);font-size:16px;font-weight:600;color:var(--ink);margin-bottom:4px}
+.settings-section-sub{font-size:13px;color:var(--text-3);margin-bottom:24px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.form-row.single{grid-template-columns:1fr}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--surface-2)}
+.toggle-row:last-child{border-bottom:none}
+.toggle-label{font-size:14px;font-weight:500;color:var(--text)}
+.toggle-desc{font-size:12px;color:var(--text-3);margin-top:2px}
+.toggle{width:40px;height:22px;background:var(--border);border-radius:11px;cursor:pointer;transition:background .2s;position:relative;flex-shrink:0}
+.toggle.on{background:var(--teal)}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--white);transition:transform .2s}
+.toggle.on::after{transform:translateX(18px)}
+.save-btn{padding:10px 24px;background:var(--teal);color:var(--white);border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:background .2s}
+.save-btn:hover{background:var(--teal-dim)}
+
+/* MISC */
+.page-header{margin-bottom:28px}
+.page-header h1{font-family:var(--font-head);font-size:24px;font-weight:700;color:var(--ink);margin-bottom:4px}
+.page-header p{font-size:14px;color:var(--text-2)}
+.empty{text-align:center;padding:48px;color:var(--text-3);font-size:14px}
+input[type=file]{display:none}
+canvas{max-height:220px}
+</style>
 </head>
 <body>
 
-<header>
-  <div>
-    <h1>⚡ Taxora</h1>
-    <p>AI-powered Invoice & Tax Data Extraction for Pakistani Businesses</p>
-  </div>
-</header>
-
-<div class="container">
-  <div class="upload-card">
-    <h2>Upload Your Invoice</h2>
-    <p>Supports JPG and PNG invoice images. AI will extract all fields automatically.</p>
-    <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
-      <input type="file" id="fileInput" accept=".jpg,.jpeg,.png" onchange="handleFile(this)"/>
-      <div class="icon">📄</div>
-      <p>Click to upload invoice</p>
-      <span>JPG, PNG supported</span>
+<!-- AUTH -->
+<div id="auth-screen">
+  <div class="auth-left">
+    <div class="auth-logo">Tax<span>ora</span></div>
+    <div class="auth-tagline">FBR compliance,<br/><em>automated.</em></div>
+    <div class="auth-sub">Upload invoices, receipts and documents. Taxora extracts, categorises and prepares your tax data — FBR-ready, every time.</div>
+    <div class="auth-stats">
+      <div class="auth-stat"><div class="auth-stat-n">PKR 2.4B</div><div class="auth-stat-l">Tax data processed</div></div>
+      <div class="auth-stat"><div class="auth-stat-n">98.6%</div><div class="auth-stat-l">Extraction accuracy</div></div>
+      <div class="auth-stat"><div class="auth-stat-n">1,200+</div><div class="auth-stat-l">Businesses onboard</div></div>
     </div>
-    <div id="file-name">No file selected</div>
-    <button class="btn" id="extractBtn" onclick="extractInvoice()" disabled>
-      🔍 Extract with AI
-    </button>
-    <div class="loader" id="loader"></div>
-    <div class="error-msg" id="errorMsg"></div>
   </div>
+  <div class="auth-right">
+    <div class="auth-form-wrap">
+      <div class="auth-form-title">Welcome back</div>
+      <div class="auth-form-sub">Sign in to your Taxora account</div>
+      <div class="form-group">
+        <label class="form-label">Email address</label>
+        <input class="form-input" type="email" placeholder="you@business.com" id="login-email"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" placeholder="••••••••" id="login-pass"/>
+      </div>
+      <button class="btn-primary" onclick="login()">Sign in to Taxora</button>
+      <div class="auth-footer" style="margin-top:16px"><a href="#">Forgot password?</a></div>
+      <div class="auth-footer">Don't have an account? <a href="#">Request access</a></div>
+    </div>
+  </div>
+</div>
 
-  <div class="results-card" id="resultsCard">
-    <h2>Extracted Data <span class="success-badge">✓ Complete</span></h2>
-    <table id="resultsTable">
-      <thead>
-        <tr><th>Field</th><th>Extracted Value</th></tr>
-      </thead>
-      <tbody id="resultsBody"></tbody>
-    </table>
-    <button class="download-btn" id="downloadBtn" onclick="downloadExcel()">
-      📥 Download Excel Report
-    </button>
+<!-- APP -->
+<div id="app-screen">
+  <div class="app-layout">
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <div class="sidebar-logo">Tax<span>ora</span></div>
+      <div class="sidebar-nav">
+        <div class="nav-section">Overview</div>
+        <div class="nav-item active" onclick="goto('dashboard',this)"><span class="nav-icon">📊</span> Dashboard</div>
+        <div class="nav-section">Documents</div>
+        <div class="nav-item" onclick="goto('upload',this)"><span class="nav-icon">📤</span> Upload Documents</div>
+        <div class="nav-item" onclick="goto('docs',this)"><span class="nav-icon">🗂️</span> Document Library</div>
+        <div class="nav-section">Tax & Finance</div>
+        <div class="nav-item" onclick="goto('reports',this)"><span class="nav-icon">📋</span> Reports & FBR</div>
+        <div class="nav-item" onclick="goto('expenses',this)"><span class="nav-icon">💸</span> Expenses</div>
+        <div class="nav-item" onclick="goto('invoices',this)"><span class="nav-icon">🧾</span> Invoices</div>
+        <div class="nav-section">Account</div>
+        <div class="nav-item" onclick="goto('settings',this)"><span class="nav-icon">⚙️</span> Settings</div>
+      </div>
+      <div class="sidebar-footer">
+        <div class="user-pill">
+          <div class="user-avatar">J</div>
+          <div><div class="user-name">Jawad Hussain</div><div class="user-role">Admin</div></div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- MAIN -->
+    <div class="main-area">
+      <div class="topbar">
+        <div class="topbar-title" id="page-title">Dashboard</div>
+        <div class="topbar-right">
+          <button class="topbar-btn outline" onclick="goto('upload',null)">+ Upload</button>
+          <button class="topbar-btn primary" onclick="goto('reports',null)">Export FBR</button>
+          <div style="position:relative;cursor:pointer">🔔<div class="notif-dot"></div></div>
+        </div>
+      </div>
+
+      <!-- DASHBOARD PAGE -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-header">
+          <h1>Good morning, Jawad</h1>
+          <p>Here's your financial overview for FY 2024–25</p>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-card teal-accent">
+            <div class="metric-label">Total Revenue</div>
+            <div class="metric-value">PKR 4.8M</div>
+            <div class="metric-sub"><span class="badge-up">↑ 12%</span><span>vs last quarter</span></div>
+          </div>
+          <div class="metric-card amber-accent">
+            <div class="metric-label">Tax Liability</div>
+            <div class="metric-value">PKR 960K</div>
+            <div class="metric-sub"><span class="badge-down">↑ 8%</span><span>due Sep 30</span></div>
+          </div>
+          <div class="metric-card red-accent">
+            <div class="metric-label">Total Expenses</div>
+            <div class="metric-value">PKR 1.2M</div>
+            <div class="metric-sub"><span class="badge-up">↓ 3%</span><span>vs last quarter</span></div>
+          </div>
+          <div class="metric-card green-accent">
+            <div class="metric-label">Docs Processed</div>
+            <div class="metric-value">342</div>
+            <div class="metric-sub"><span class="badge-up">98.6%</span><span>accuracy</span></div>
+          </div>
+        </div>
+
+        <div class="charts-row">
+          <div class="card">
+            <div class="card-title">Revenue vs Expenses</div>
+            <div class="card-sub">Monthly breakdown — FY 2024–25</div>
+            <canvas id="revenueChart"></canvas>
+          </div>
+          <div class="card">
+            <div class="card-title">FBR Filing Status</div>
+            <div class="card-sub">Current tax period</div>
+            <div class="fbr-status">
+              <div class="fbr-item"><span class="fbr-item-label">Sales Tax Return (STR)</span><span class="status-pill done">Filed</span></div>
+              <div class="fbr-item"><span class="fbr-item-label">Income Tax Return</span><span class="status-pill pending">Pending</span></div>
+              <div class="fbr-item"><span class="fbr-item-label">Withholding Tax (WHT)</span><span class="status-pill done">Filed</span></div>
+              <div class="fbr-item"><span class="fbr-item-label">Annual Return (IR)</span><span class="status-pill missing">Not started</span></div>
+              <div class="fbr-item"><span class="fbr-item-label">NTN Verification</span><span class="status-pill done">Verified</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bottom-row">
+          <div class="card">
+            <div class="card-title">Recent Activity</div>
+            <div class="card-sub">Last 5 transactions processed by AI</div>
+            <div class="activity-list">
+              <div class="activity-item">
+                <div class="activity-icon invoice">🧾</div>
+                <div class="activity-body"><div class="activity-name">Invoice #INV-2024-089</div><div class="activity-time">2 hours ago · Al-Fatah Enterprises</div></div>
+                <div class="activity-amount">PKR 145,000</div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-icon expense">💳</div>
+                <div class="activity-body"><div class="activity-name">Office Supplies Receipt</div><div class="activity-time">5 hours ago · Metro Cash & Carry</div></div>
+                <div class="activity-amount">PKR 18,400</div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-icon invoice">🧾</div>
+                <div class="activity-body"><div class="activity-name">Invoice #INV-2024-088</div><div class="activity-time">Yesterday · Hashmi Trading</div></div>
+                <div class="activity-amount">PKR 290,000</div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-icon tax">📋</div>
+                <div class="activity-body"><div class="activity-name">WHT Challan</div><div class="activity-time">Yesterday · FBR</div></div>
+                <div class="activity-amount">PKR 54,200</div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-icon expense">💳</div>
+                <div class="activity-body"><div class="activity-name">Utility Bill — LESCO</div><div class="activity-time">2 days ago</div></div>
+                <div class="activity-amount">PKR 32,100</div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Expense Breakdown</div>
+            <div class="card-sub">By category this quarter</div>
+            <canvas id="expenseChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- UPLOAD PAGE -->
+      <div class="page" id="page-upload">
+        <div class="page-header">
+          <h1>Upload Documents</h1>
+          <p>Taxora AI will extract, categorise and validate your documents automatically</p>
+        </div>
+        <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="handleDrop(event)">
+          <div class="upload-icon">📂</div>
+          <div class="upload-title">Drop documents here or click to browse</div>
+          <div class="upload-sub">Taxora AI extracts data, identifies vendor, amount and tax codes automatically</div>
+          <div class="upload-types">
+            <span class="type-tag">PDF</span>
+            <span class="type-tag">JPG / PNG</span>
+            <span class="type-tag">XLSX</span>
+            <span class="type-tag">DOCX</span>
+          </div>
+        </div>
+        <input type="file" id="file-input" multiple accept=".pdf,.jpg,.jpeg,.png,.xlsx,.docx" onchange="handleFileSelect(event)"/>
+
+        <div class="card" style="margin-bottom:24px">
+          <div class="card-title">Processing Queue</div>
+          <div class="card-sub">AI is extracting data from your documents</div>
+          <div id="upload-queue">
+            <div class="activity-item">
+              <div class="activity-icon invoice">🧾</div>
+              <div class="activity-body"><div class="activity-name">invoice_sept_2024.pdf</div><div class="activity-time">✅ Extracted · Invoice · PKR 145,000 · Al-Fatah Enterprises</div></div>
+              <span class="status-pill done">Done</span>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon expense">🖼️</div>
+              <div class="activity-body"><div class="activity-name">receipt_metro_oct.jpg</div><div class="activity-time">🤖 AI processing...</div></div>
+              <span class="status-pill pending">Processing</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <div><div class="card-title">Recent Uploads</div><div class="card-sub" style="margin-bottom:0">All documents processed this month</div></div>
+            <button class="topbar-btn outline" style="font-size:12px">Filter</button>
+          </div>
+          <table class="doc-table">
+            <thead><tr><th>Document</th><th>Type</th><th>Vendor</th><th>Amount</th><th>AI Confidence</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>invoice_089.pdf</td><td><span class="doc-type-pill invoice">Invoice</span></td><td>Al-Fatah Enterprises</td><td>PKR 145,000</td><td><span class="ai-badge">99.2%</span></td><td><span class="status-pill done">Validated</span></td></tr>
+              <tr><td>receipt_aug_supplies.jpg</td><td><span class="doc-type-pill receipt">Receipt</span></td><td>Metro Cash & Carry</td><td>PKR 18,400</td><td><span class="ai-badge">97.8%</span></td><td><span class="status-pill done">Validated</span></td></tr>
+              <tr><td>expense_travel_q3.pdf</td><td><span class="doc-type-pill expense">Expense</span></td><td>Multiple</td><td>PKR 42,300</td><td><span class="ai-badge">95.1%</span></td><td><span class="status-pill pending">Review</span></td></tr>
+              <tr><td>utility_lesco_sep.pdf</td><td><span class="doc-type-pill receipt">Receipt</span></td><td>LESCO</td><td>PKR 32,100</td><td><span class="ai-badge">99.9%</span></td><td><span class="status-pill done">Validated</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DOCS PAGE -->
+      <div class="page" id="page-docs">
+        <div class="page-header"><h1>Document Library</h1><p>All uploaded and processed documents</p></div>
+        <div class="table-section">
+          <div class="table-header">
+            <div><div class="card-title" style="margin-bottom:0">342 documents</div></div>
+            <div style="display:flex;gap:8px">
+              <button class="topbar-btn outline" style="font-size:12px">Filter by type</button>
+              <button class="topbar-btn outline" style="font-size:12px">Date range</button>
+            </div>
+          </div>
+          <table class="doc-table">
+            <thead><tr><th>Document</th><th>Type</th><th>Date</th><th>Vendor / Source</th><th>Amount (PKR)</th><th>Tax Code</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>INV-2024-089.pdf</td><td><span class="doc-type-pill invoice">Invoice</span></td><td>Oct 15, 2024</td><td>Al-Fatah Enterprises</td><td>145,000</td><td>SR-17</td><td><span class="status-pill done">Validated</span></td></tr>
+              <tr><td>INV-2024-088.pdf</td><td><span class="doc-type-pill invoice">Invoice</span></td><td>Oct 14, 2024</td><td>Hashmi Trading Co.</td><td>290,000</td><td>SR-17</td><td><span class="status-pill done">Validated</span></td></tr>
+              <tr><td>RCP-metro-oct.jpg</td><td><span class="doc-type-pill receipt">Receipt</span></td><td>Oct 13, 2024</td><td>Metro Cash & Carry</td><td>18,400</td><td>EX-04</td><td><span class="status-pill done">Validated</span></td></tr>
+              <tr><td>EXP-travel-q3.pdf</td><td><span class="doc-type-pill expense">Expense</span></td><td>Oct 10, 2024</td><td>Multiple vendors</td><td>42,300</td><td>EX-09</td><td><span class="status-pill pending">Review</span></td></tr>
+              <tr><td>WHT-challan-sep.pdf</td><td><span class="doc-type-pill receipt">Receipt</span></td><td>Sep 30, 2024</td><td>FBR</td><td>54,200</td><td>WH-07</td><td><span class="status-pill done">Validated</span></td></tr>
+              <tr><td>LESCO-sep-2024.pdf</td><td><span class="doc-type-pill expense">Expense</span></td><td>Sep 28, 2024</td><td>LESCO</td><td>32,100</td><td>UT-02</td><td><span class="status-pill done">Validated</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- REPORTS PAGE -->
+      <div class="page" id="page-reports">
+        <div class="page-header"><h1>Reports & FBR Export</h1><p>Generate tax-ready reports and FBR submission files</p></div>
+        <div class="report-cards">
+          <div class="report-card">
+            <div class="report-card-icon">📊</div>
+            <div class="report-card-title">Sales Tax Return (STR)</div>
+            <div class="report-card-desc">Monthly sales tax summary, ready for FBR IRIS portal submission</div>
+            <div><span class="fbr-badge">FBR Ready</span></div>
+          </div>
+          <div class="report-card">
+            <div class="report-card-icon">📄</div>
+            <div class="report-card-title">Income Tax Return</div>
+            <div class="report-card-desc">Annual income tax computation with all deductions and exemptions applied</div>
+            <div><span class="fbr-badge">FBR Ready</span></div>
+          </div>
+          <div class="report-card">
+            <div class="report-card-icon">💳</div>
+            <div class="report-card-title">Withholding Tax (WHT)</div>
+            <div class="report-card-desc">Section 153 & 149 statements for monthly WHT filings</div>
+            <div><span class="fbr-badge">FBR Ready</span></div>
+          </div>
+          <div class="report-card">
+            <div class="report-card-icon">📈</div>
+            <div class="report-card-title">P&L Statement</div>
+            <div class="report-card-desc">Profit & loss report with revenue, expenses and net margin</div>
+          </div>
+          <div class="report-card">
+            <div class="report-card-icon">🏦</div>
+            <div class="report-card-title">Balance Sheet</div>
+            <div class="report-card-desc">Assets, liabilities and equity as of the current period</div>
+          </div>
+          <div class="report-card">
+            <div class="report-card-icon">📦</div>
+            <div class="report-card-title">Expense Summary</div>
+            <div class="report-card-desc">Categorised expense report for the selected tax period</div>
+          </div>
+        </div>
+
+        <div class="table-section">
+          <div class="table-header">
+            <div><div class="card-title" style="margin-bottom:0">Recent Exports</div></div>
+            <button class="topbar-btn primary" style="font-size:12px">Generate New Report</button>
+          </div>
+          <table class="doc-table">
+            <thead><tr><th>Report</th><th>Period</th><th>Generated</th><th>Format</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody>
+              <tr><td>Sales Tax Return — Sep 2024</td><td>Sep 2024</td><td>Oct 1, 2024</td><td>XML + PDF</td><td><span class="status-pill done">Filed</span></td><td><a href="#" style="color:var(--teal);font-size:13px;text-decoration:none">Download</a></td></tr>
+              <tr><td>WHT Statement — Sep 2024</td><td>Sep 2024</td><td>Sep 30, 2024</td><td>XML</td><td><span class="status-pill done">Filed</span></td><td><a href="#" style="color:var(--teal);font-size:13px;text-decoration:none">Download</a></td></tr>
+              <tr><td>P&L Statement Q2</td><td>Jul–Sep 2024</td><td>Oct 5, 2024</td><td>PDF + XLSX</td><td><span class="status-pill done">Generated</span></td><td><a href="#" style="color:var(--teal);font-size:13px;text-decoration:none">Download</a></td></tr>
+              <tr><td>Income Tax Return FY24</td><td>FY 2024</td><td>—</td><td>—</td><td><span class="status-pill pending">Pending</span></td><td><span style="color:var(--text-3);font-size:13px">Start</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- EXPENSES PAGE -->
+      <div class="page" id="page-expenses">
+        <div class="page-header"><h1>Expenses</h1><p>All business expenses extracted and categorised by AI</p></div>
+        <div class="metrics-grid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="metric-card amber-accent"><div class="metric-label">Total Expenses</div><div class="metric-value">PKR 1.2M</div><div class="metric-sub"><span class="badge-up">↓ 3%</span><span>vs last quarter</span></div></div>
+          <div class="metric-card teal-accent"><div class="metric-label">Deductible</div><div class="metric-value">PKR 980K</div><div class="metric-sub"><span>81.6% of total</span></div></div>
+          <div class="metric-card red-accent"><div class="metric-label">Non-Deductible</div><div class="metric-value">PKR 220K</div><div class="metric-sub"><span>18.4% of total</span></div></div>
+        </div>
+        <div class="table-section">
+          <div class="table-header"><div class="card-title" style="margin-bottom:0">All Expenses</div><button class="topbar-btn outline" style="font-size:12px">+ Add Expense</button></div>
+          <table class="doc-table">
+            <thead><tr><th>Description</th><th>Category</th><th>Date</th><th>Vendor</th><th>Amount (PKR)</th><th>Deductible</th><th>Tax Code</th></tr></thead>
+            <tbody>
+              <tr><td>Office Supplies</td><td><span class="doc-type-pill expense">Office</span></td><td>Oct 13</td><td>Metro Cash & Carry</td><td>18,400</td><td><span class="status-pill done">Yes</span></td><td>EX-04</td></tr>
+              <tr><td>Travel — Client Visit</td><td><span class="doc-type-pill expense">Travel</span></td><td>Oct 10</td><td>Multiple</td><td>42,300</td><td><span class="status-pill done">Yes</span></td><td>EX-09</td></tr>
+              <tr><td>Electricity Bill</td><td><span class="doc-type-pill receipt">Utility</span></td><td>Sep 28</td><td>LESCO</td><td>32,100</td><td><span class="status-pill done">Yes</span></td><td>UT-02</td></tr>
+              <tr><td>Team Lunch</td><td><span class="doc-type-pill expense">Meals</span></td><td>Sep 25</td><td>Monal Restaurant</td><td>14,800</td><td><span class="status-pill missing">Partial</span></td><td>EX-05</td></tr>
+              <tr><td>Software Subscription</td><td><span class="doc-type-pill invoice">Tech</span></td><td>Sep 1</td><td>Adobe</td><td>28,000</td><td><span class="status-pill done">Yes</span></td><td>EX-08</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- INVOICES PAGE -->
+      <div class="page" id="page-invoices">
+        <div class="page-header"><h1>Invoices</h1><p>All invoices extracted and validated by Taxora AI</p></div>
+        <div class="metrics-grid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="metric-card teal-accent"><div class="metric-label">Total Invoiced</div><div class="metric-value">PKR 4.8M</div><div class="metric-sub"><span class="badge-up">↑ 12%</span><span>this quarter</span></div></div>
+          <div class="metric-card green-accent"><div class="metric-label">Paid</div><div class="metric-value">PKR 3.9M</div><div class="metric-sub"><span>82% of total</span></div></div>
+          <div class="metric-card amber-accent"><div class="metric-label">Outstanding</div><div class="metric-value">PKR 900K</div><div class="metric-sub"><span class="badge-down">3 overdue</span></div></div>
+        </div>
+        <div class="table-section">
+          <div class="table-header"><div class="card-title" style="margin-bottom:0">All Invoices</div><button class="topbar-btn primary" style="font-size:12px">+ New Invoice</button></div>
+          <table class="doc-table">
+            <thead><tr><th>Invoice #</th><th>Client</th><th>Issue Date</th><th>Due Date</th><th>Amount (PKR)</th><th>GST</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>INV-2024-089</td><td>Al-Fatah Enterprises</td><td>Oct 15</td><td>Nov 15</td><td>145,000</td><td>26,100</td><td><span class="status-pill done">Paid</span></td></tr>
+              <tr><td>INV-2024-088</td><td>Hashmi Trading Co.</td><td>Oct 14</td><td>Nov 14</td><td>290,000</td><td>52,200</td><td><span class="status-pill pending">Pending</span></td></tr>
+              <tr><td>INV-2024-087</td><td>Raza Industries</td><td>Sep 30</td><td>Oct 30</td><td>510,000</td><td>91,800</td><td><span class="status-pill done">Paid</span></td></tr>
+              <tr><td>INV-2024-086</td><td>Bilal Textiles</td><td>Sep 15</td><td>Oct 15</td><td>220,000</td><td>39,600</td><td><span class="status-pill missing">Overdue</span></td></tr>
+              <tr><td>INV-2024-085</td><td>Khan & Sons</td><td>Sep 1</td><td>Oct 1</td><td>340,000</td><td>61,200</td><td><span class="status-pill done">Paid</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SETTINGS PAGE -->
+      <div class="page" id="page-settings">
+        <div class="page-header"><h1>Settings</h1><p>Manage your account and Taxora preferences</p></div>
+        <div class="settings-grid">
+          <div class="settings-nav">
+            <div class="settings-nav-item active">Business Profile</div>
+            <div class="settings-nav-item">Tax Configuration</div>
+            <div class="settings-nav-item">FBR Integration</div>
+            <div class="settings-nav-item">AI Preferences</div>
+            <div class="settings-nav-item">Notifications</div>
+            <div class="settings-nav-item" onclick="logout()" style="margin-top:12px;color:var(--red)">Sign out</div>
+          </div>
+          <div class="settings-panel">
+            <div class="settings-card">
+              <div class="settings-section-title">Business Profile</div>
+              <div class="settings-section-sub">Your business information used in tax filings and FBR submissions</div>
+              <div class="form-row">
+                <div class="form-group" style="margin:0"><label class="form-label">Business Name</label><input class="form-input" value="Jawad Enterprises (Pvt) Ltd"/></div>
+                <div class="form-group" style="margin:0"><label class="form-label">NTN Number</label><input class="form-input" value="1234567-8"/></div>
+              </div>
+              <div class="form-row">
+                <div class="form-group" style="margin:0"><label class="form-label">STRN (Sales Tax)</label><input class="form-input" value="12-34-5678-001-67"/></div>
+                <div class="form-group" style="margin:0"><label class="form-label">Business Type</label><input class="form-input" value="Private Limited Company"/></div>
+              </div>
+              <div class="form-row single">
+                <div class="form-group" style="margin:0"><label class="form-label">Registered Address</label><input class="form-input" value="123 Main Blvd, Lahore, Punjab, Pakistan"/></div>
+              </div>
+              <button class="save-btn" style="margin-top:16px">Save Changes</button>
+            </div>
+            <div class="settings-card">
+              <div class="settings-section-title">Notifications</div>
+              <div class="settings-section-sub">Control when Taxora alerts you</div>
+              <div class="toggle-row">
+                <div><div class="toggle-label">FBR filing deadlines</div><div class="toggle-desc">Reminders 7 days and 1 day before due dates</div></div>
+                <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+              </div>
+              <div class="toggle-row">
+                <div><div class="toggle-label">Document processing complete</div><div class="toggle-desc">Notify when AI finishes extracting a document</div></div>
+                <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+              </div>
+              <div class="toggle-row">
+                <div><div class="toggle-label">Low confidence extraction</div><div class="toggle-desc">Alert when AI confidence is below 90%</div></div>
+                <div class="toggle" onclick="this.classList.toggle('on')"></div>
+              </div>
+              <div class="toggle-row">
+                <div><div class="toggle-label">Monthly summary email</div><div class="toggle-desc">Send financial overview at month end</div></div>
+                <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end main-area -->
   </div>
 </div>
 
 <script>
-  let selectedFile = null;
+// ── NAVIGATION ──
+function goto(page, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(el) el.classList.add('active');
+  const titles={dashboard:'Dashboard',upload:'Upload Documents',docs:'Document Library',reports:'Reports & FBR',expenses:'Expenses',invoices:'Invoices',settings:'Settings'};
+  document.getElementById('page-title').textContent=titles[page]||page;
+}
 
-  function handleFile(input) {
-    selectedFile = input.files[0];
-    if (selectedFile) {
-      document.getElementById('file-name').textContent = '📎 ' + selectedFile.name;
-      document.getElementById('extractBtn').disabled = false;
-    }
+// ── AUTH ──
+function login(){
+  const e=document.getElementById('login-email').value;
+  const p=document.getElementById('login-pass').value;
+  if(!e||!p){alert('Please enter your email and password');return;}
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app-screen').style.display='block';
+  initCharts();
+}
+function logout(){
+  document.getElementById('app-screen').style.display='none';
+  document.getElementById('auth-screen').style.display='flex';
+}
+
+// ── CHARTS ──
+function initCharts(){
+  const rev=document.getElementById('revenueChart');
+  if(rev&&!rev._init){
+    rev._init=true;
+    new Chart(rev,{type:'bar',data:{
+      labels:['Apr','May','Jun','Jul','Aug','Sep','Oct'],
+      datasets:[
+        {label:'Revenue',data:[680,720,590,810,760,900,840],backgroundColor:'rgba(0,201,167,.75)',borderRadius:4},
+        {label:'Expenses',data:[210,195,240,185,200,220,195],backgroundColor:'rgba(244,161,0,.65)',borderRadius:4}
+      ]
+    },options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:10}}},scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:11},callback:v=>'PKR '+v+'K'}}}}});
   }
-
-  async function extractInvoice() {
-    if (!selectedFile) return;
-    document.getElementById('loader').style.display = 'block';
-    document.getElementById('extractBtn').disabled = true;
-    document.getElementById('resultsCard').style.display = 'none';
-    document.getElementById('errorMsg').style.display = 'none';
-
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-
-    try {
-      const response = await fetch('/extract', {
-        method: 'POST',
-        body: formData
-      });
-      const data = await response.json();
-      document.getElementById('loader').style.display = 'none';
-      document.getElementById('extractBtn').disabled = false;
-      if (data.extracted_data) {
-        displayResults(data.extracted_data);
-      } else {
-        showError('Extraction failed. Please try another image.');
-      }
-    } catch (err) {
-      document.getElementById('loader').style.display = 'none';
-      document.getElementById('extractBtn').disabled = false;
-      showError('Could not connect to server. Make sure the API is running.');
-    }
+  const exp=document.getElementById('expenseChart');
+  if(exp&&!exp._init){
+    exp._init=true;
+    new Chart(exp,{type:'doughnut',data:{
+      labels:['Office','Travel','Utilities','Meals','Tech','Other'],
+      datasets:[{data:[18,35,26,12,22,8],backgroundColor:['#00C9A7','#F4A100','#378ADD','#7F77DD','#16A34A','#8B90A8'],borderWidth:0,hoverOffset:4}]
+    },options:{responsive:true,cutout:'68%',plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:10,padding:8}}}}});
   }
+}
 
-  function displayResults(data) {
-    const labels = {
-      supplier_name: 'Supplier Name',
-      invoice_number: 'Invoice Number',
-      invoice_date: 'Invoice Date',
-      due_date: 'Due Date',
-      description: 'Description',
-      subtotal: 'Subtotal',
-      sales_tax: 'Sales Tax',
-      withholding_tax: 'Withholding Tax',
-      total_amount: 'Total Amount',
-      currency: 'Currency',
-      payment_method: 'Payment Method'
-    };
-    const tbody = document.getElementById('resultsBody');
-    tbody.innerHTML = '';
-    for (const [key, label] of Object.entries(labels)) {
-      const val = data[key] || '-';
-      tbody.innerHTML += `<tr><td class="field-label">${label}</td><td>${val}</td></tr>`;
-    }
-    document.getElementById('resultsCard').style.display = 'block';
-  }
+// ── DRAG & DROP ──
+function dragOver(e){e.preventDefault();document.getElementById('drop-zone').classList.add('dragover')}
+function dragLeave(){document.getElementById('drop-zone').classList.remove('dragover')}
+function handleDrop(e){
+  e.preventDefault();
+  dragLeave();
+  const files=e.dataTransfer.files;
+  addToQueue(files);
+}
+function handleFileSelect(e){addToQueue(e.target.files)}
+function addToQueue(files){
+  const q=document.getElementById('upload-queue');
+  Array.from(files).forEach(f=>{
+    const item=document.createElement('div');
+    item.className='activity-item';
+    item.innerHTML=`<div class="activity-icon invoice">📄</div><div class="activity-body"><div class="activity-name">${f.name}</div><div class="activity-time">🤖 AI processing...</div></div><span class="status-pill pending">Processing</span>`;
+    q.appendChild(item);
+    setTimeout(()=>{
+      item.querySelector('.activity-time').textContent='✅ Extracted · Validated';
+      item.querySelector('.status-pill').textContent='Done';
+      item.querySelector('.status-pill').className='status-pill done';
+    },2000+Math.random()*2000);
+  });
+}
 
-  async function downloadExcel() {
-    if (!selectedFile) return;
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-    const response = await fetch('/extract-and-export', {
-      method: 'POST',
-      body: formData
-    });
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = selectedFile.name.replace(/\.[^/.]+$/, '') + '_taxora.xlsx';
-    a.click();
-  }
-
-  function showError(msg) {
-    const el = document.getElementById('errorMsg');
-    el.textContent = msg;
-    el.style.display = 'block';
-  }
+// Demo: press Enter on password to login
+document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')login()});
 </script>
-
 </body>
 </html>
